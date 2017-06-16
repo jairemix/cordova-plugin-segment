@@ -15,17 +15,29 @@
 {
     NSString* writeKeyPreferenceName;
     NSString* writeKeyPListName;
-
+    // Note: Overwrite to set keys based on app id's
     //Get app credentials from config.xml or the info.plist if they can't be found
-    #ifdef DEBUG
-        [SEGAnalytics debug:YES];
-        writeKeyPreferenceName = @"analytics_debug_write_key";
-        writeKeyPListName = @"AnalyticsDebugWriteKey";
-    #else
-        [SEGAnalytics debug:NO];
-        writeKeyPreferenceName = @"analytics_write_key";
+    // #ifdef DEBUG
+    //     [SEGAnalytics debug:YES];
+    //     writeKeyPreferenceName = @"analytics_debug_write_key";
+    //     writeKeyPListName = @"AnalyticsDebugWriteKey";
+    // #else
+    //     [SEGAnalytics debug:NO];
+    //     writeKeyPreferenceName = @"analytics_write_key";
+    //     writeKeyPListName = @"AnalyticsWriteKey";
+    // #endif
+
+    NSString* appID = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
+
+    if ([appID rangeOfString:@"staging"].location == NSNotFound) {
+        // Prod
+        writeKeyPreferenceName = @"analytics_ios_write_key";
         writeKeyPListName = @"AnalyticsWriteKey";
-    #endif
+    } else {
+        // Non-Prod
+        writeKeyPreferenceName = @"analytics_ios_debug_write_key";
+        writeKeyPListName = @"AnalyticsDebugWriteKey";
+    }
 
     NSString* writeKey = self.commandDelegate.settings[writeKeyPreferenceName] ?: [[NSBundle mainBundle] objectForInfoDictionaryKey:writeKeyPListName];
 
@@ -34,6 +46,7 @@
 
         SEGAnalyticsConfiguration *configuration = [SEGAnalyticsConfiguration configurationWithWriteKey:writeKey];
         configuration.shouldUseLocationServices = [useLocationServices boolValue];
+        // configuration.trackApplicationLifecycleEvents = YES; // Enable this to record certain application events automatically! which then used by Tune to map install attributions -> https://segment.com/docs/spec/mobile/#lifecycle-events
         [SEGAnalytics setupWithConfiguration:configuration];
     } else {
         NSLog(@"[cordova-plugin-segment] ERROR - Invalid write key");

@@ -25,8 +25,6 @@
                 <param name="android-package" value="com.segment.analytics.cordova.AnalyticsPlugin"/>
                 <param name="onload" value="true"/>
             </feature>
-            <preference name="analytics_write_key"/>
-            <preference name="analytics_debug_write_key"/>
         </config-file>
 
         <config-file target="AndroidManifest.xml" parent="/manifest">
@@ -49,7 +47,7 @@
             <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
         </config-file>
 
-        <framework src="com.segment.analytics.android:analytics:4+"/>
+        <framework src="com.segment.analytics.android:analytics:4.2.6"/>
 
         <source-file src="src/android/AnalyticsPlugin.java" target-dir="src/com/segment/analytics/cordova"/>
     </platform>
@@ -62,8 +60,8 @@
                 <param name="ios-package" value="AnalyticsPlugin" />
                 <param name="onload" value="true"/>
             </feature>
-            <preference name="analytics_write_key"/>
-            <preference name="analytics_debug_write_key"/>
+            <preference name="analytics_ios_write_key"/>
+            <preference name="analytics_ios_debug_write_key"/>
         </config-file>
 
         <header-file src="src/ios/AnalyticsPlugin.h" />
@@ -71,6 +69,7 @@
         <pods-config ios-min-version="8.0" use-frameworks="true">
         </pods-config>
         <pod id="Analytics" version="3.5.5" />
+        <framework src="AdSupport.framework" />
     </platform>
 
 </plugin>
