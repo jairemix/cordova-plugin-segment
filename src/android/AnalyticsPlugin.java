@@ -24,6 +24,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import android.os.Process;
+
 public class AnalyticsPlugin extends CordovaPlugin {
 
     private static final String TAG = "AnalyticsPlugin";
@@ -34,11 +36,12 @@ public class AnalyticsPlugin extends CordovaPlugin {
         String writeKeyPreferenceName;
         LogLevel logLevel;
 
+        // BuildConfig.APPLICATION_ID returns org.apache.cordova instead com.shipt.shopper-staging or com.shipt.shopper or com.shipt.shopper-enterprise due to which I could not able to set keys based on string search. Please see other possible ways to get the APPLICATION_ID.
         if(BuildConfig.DEBUG) {
-            writeKeyPreferenceName = "analytics_debug_write_key";
+            writeKeyPreferenceName = "analytics_android_debug_write_key";
             logLevel = LogLevel.VERBOSE;
         } else {
-            writeKeyPreferenceName = "analytics_write_key";
+            writeKeyPreferenceName = "analytics_android_write_key";
             logLevel = LogLevel.NONE;
         }
 
@@ -48,13 +51,41 @@ public class AnalyticsPlugin extends CordovaPlugin {
             analytics = null;
             Log.e(TAG, "Invalid write key: " + writeKey);
         } else {
+            // trackApplicationLifecycleEvents() -> Enable this to record certain application events automatically! -> which then used by Tune to map install attributions https://segment.com/docs/sources/mobile/android/quickstart/#step-2-initialize-the-client
+
+            // trackApplicationLifecycleEvents - is not getting fired due to ` segment` initializing is getting done on onActivityStarted instead on onActivityCreated. Where segment logic of `trackApplicationLifecycleEvents` is handled with in `onActivityCreated` https://github.com/segmentio/analytics-android/blob/master/analytics/src/main/java/com/segment/analytics/Analytics.java#L291
+
+            // analytics = new Analytics.Builder(
+            //     cordova.getActivity().getApplicationContext(),
+            //     writeKey
+            // )
+            // .logLevel(logLevel)
+            // .collectDeviceId(true)
+            // .trackApplicationLifecycleEvents()
+            // .build();
+
             analytics = new Analytics.Builder(
                 cordova.getActivity().getApplicationContext(),
                 writeKey
-            ).logLevel(logLevel).build();
+            )
+            .logLevel(logLevel)
+            .collectDeviceId(true)
+            .build();
 
             Analytics.setSingletonInstance(analytics);
         }
+    }
+
+    /** On android, when closing the app via the back button, a relaunch tries to reinitialize the segment instance.
+    *   This causes a crash because the segment instance is already initialized as a singleton. So. We need to kill
+    *   the current process on destroy in order to allow the app to relaunch and initialize segment successfully.
+    *
+    *  ... fucking android
+    **/
+    @Override
+    public void onDestroy() {
+       int pid = android.os.Process.myPid();
+       android.os.Process.killProcess(pid);
     }
 
     @Override
